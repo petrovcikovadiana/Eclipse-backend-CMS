@@ -1,19 +1,20 @@
 // Import necessary modules
 const multer = require('multer');
+const sharp = require('sharp');
 const Post = require('../models/postModel');
 
 // Configure multer for handling file uploads
-const multerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/img/posts'); // Set the destination folder for uploaded files
-  },
-  filename: (req, file, cb) => {
-    const ext = file.mimetype.split('/')[1]; // Extract the file extension
-    cb(null, `post-${req.body.slug}-${Date.now()}.${ext}`); // Generate a unique filename
-  },
-});
+// const multerStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'public/img/posts'); // Set the destination folder for uploaded files
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1]; // Extract the file extension
+//     cb(null, `post-${req.body.slug}-${Date.now()}.${ext}`); // Generate a unique filename
+//   },
+// });
 
-// File filter to ensure only images are uploaded
+//File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true); // Allow the upload if the file is an image
@@ -22,9 +23,24 @@ const multerFilter = (req, file, cb) => {
     //TODO-> cb(new AppError('Not an image! Please upload only images.', 400), false);
   }
 };
+const multerStorage = multer.memoryStorage();
 
 // Initialize multer with the configured storage and file filter
 const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+
+exports.resizePostImg = (req, res, next) => {
+  if (!req.file) return next();
+
+  req.file.filename = `post-${req.body.slug}-${Date.now()}.avif`; // Generate a unique filename
+
+  sharp(req.file.buffer)
+    .resize(288, 208)
+    .toFormat('avif')
+    .avif({ quality: 90 })
+    .toFile(`public/img/posts/${req.file.filename}`);
+
+  next();
+};
 
 // Middleware for uploading a single image
 exports.uploadPostImg = upload.single('image');

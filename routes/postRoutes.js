@@ -8,7 +8,11 @@ const router = express.Router();
 router
   .route('/')
   .get(postController.getAllPosts)
-  .post(postController.uploadPostImg, postController.createPost);
+  .post(
+    postController.uploadPostImg,
+    postController.resizePostImg,
+    postController.createPost,
+  );
 
 router
   .route('/:id')
