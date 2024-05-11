@@ -55,6 +55,13 @@ exports.getAllPosts = async (req, res) => {
 
     query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
 
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.selcet(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
     const posts = await query;
 
     // Send the response with the fetched posts
