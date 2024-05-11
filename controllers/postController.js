@@ -42,11 +42,19 @@ exports.getAllPosts = async (req, res) => {
   try {
     // Prepare the query object excluding certain fields
     const queryObj = { ...req.query };
-    const excludeFields = ['page', 'sort', 'limit', 'fields'];
+    const excludeFields = ['page', 'limit', 'fields', 'sort', 'order']; // Remove 'sort' and 'order' from excluded fields
     excludeFields.forEach((field) => delete queryObj[field]);
 
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    console.log(JSON.parse(queryStr));
+
     // Execute the query to fetch posts
-    const query = await Post.find(queryObj);
+    let query = Post.find(JSON.parse(queryStr));
+
+    // Always sort by date
+    query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
+
     const posts = await query;
 
     // Send the response with the fetched posts
