@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const Post = require('../models/postModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 // File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
@@ -40,41 +41,13 @@ exports.uploadPostImg = upload.single('image');
 // Function to retrieve all posts
 exports.getAllPosts = async (req, res) => {
   try {
-    // Prepare the query object excluding certain fields
-    const queryObj = { ...req.query };
-    const excludeFields = ['page', 'limit', 'fields', 'sort', 'order']; // Remove 'sort' and 'order' from excluded fields
-    excludeFields.forEach((field) => delete queryObj[field]);
-
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-
-    // Execute the query to fetch posts
-    let query = Post.find(JSON.parse(queryStr));
-
-    query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
-
-    // Field limiting
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.selcet(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
-    // Pagination
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.limit * 1 || 10;
-    const skip = (page - 1) * limit;
-
-    query = query.skip(skip).limit(limit);
-
-    if (req.query.page) {
-      const numPosts = await Post.countDocuments();
-      if (skip >= numPosts) throw new Error('This page does not exist');
-    }
-
     //Building posts
-    const posts = await query;
+    const features = new APIFeatures(Post.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const posts = await features.query;
 
     // Send the response with the fetched posts
     res.status(200).json({
