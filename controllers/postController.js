@@ -6,17 +6,6 @@ const path = require('path');
 
 const Post = require('../models/postModel');
 
-// Configure multer for handling file uploads
-// const multerStorage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, 'public/img/posts'); // Set the destination folder for uploaded files
-//   },
-//   filename: (req, file, cb) => {
-//     const ext = file.mimetype.split('/')[1]; // Extract the file extension
-//     cb(null, `post-${req.body.slug}-${Date.now()}.${ext}`); // Generate a unique filename
-//   },
-// });
-
 //File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {

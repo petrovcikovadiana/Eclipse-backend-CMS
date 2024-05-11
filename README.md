@@ -1,2 +1,2 @@
 # Eclipse
-Eclipse CMS by Webgroo
+Eclipse CMS by CloudyLake Softworks
