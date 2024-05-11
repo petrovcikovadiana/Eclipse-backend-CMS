@@ -1,6 +1,5 @@
 // Import necessary modules
 const multer = require('multer');
-// eslint-disable-next-line node/no-extraneous-require
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
@@ -48,13 +47,13 @@ exports.getAllPosts = async (req, res) => {
 
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    console.log(JSON.parse(queryStr));
 
     // Execute the query to fetch posts
     let query = Post.find(JSON.parse(queryStr));
 
     query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
 
+    // Field limiting
     if (req.query.fields) {
       const fields = req.query.fields.split(',').join(' ');
       query = query.selcet(fields);
@@ -62,6 +61,19 @@ exports.getAllPosts = async (req, res) => {
       query = query.select('-__v');
     }
 
+    // Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 10;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    if (req.query.page) {
+      const numPosts = await Post.countDocuments();
+      if (skip >= numPosts) throw new Error('This page does not exist');
+    }
+
+    //Building posts
     const posts = await query;
 
     // Send the response with the fetched posts
