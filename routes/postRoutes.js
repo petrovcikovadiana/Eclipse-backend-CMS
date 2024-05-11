@@ -3,8 +3,6 @@ const postController = require('../controllers/postController');
 
 const router = express.Router();
 
-// router.param('id', postController.checkID);
-
 router
   .route('/')
   .get(postController.getAllPosts)
@@ -19,5 +17,7 @@ router
   .get(postController.getPost)
   .patch(postController.updatePost)
   .delete(postController.deletePost);
+
+router.delete('/deleteImg/:image', postController.deletePostImage);
 
 module.exports = router;
