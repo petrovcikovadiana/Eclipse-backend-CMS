@@ -1,6 +1,9 @@
 // Import necessary modules
 const multer = require('multer');
 const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+
 const Post = require('../models/postModel');
 
 // Configure multer for handling file uploads
@@ -158,6 +161,42 @@ exports.deletePost = async (req, res) => {
     res.status(400).json({
       status: 'fail',
       message: 'Invalid data sent!',
+    });
+  }
+};
+
+exports.deletePostImage = async (req, res) => {
+  try {
+    // Předpokládáme, že název obrázku je součástí URL jako parametr
+    const imageName = req.params.image;
+
+    // Konstrukce cesty k souboru obrázku
+    const imagePath = path.join(
+      __dirname,
+      '..',
+      'public',
+      'img',
+      'posts',
+      imageName,
+    );
+
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Image file not found.',
+      });
+    }
+
+    fs.unlinkSync(imagePath);
+
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'fail',
+      message: 'Failed to delete image.',
     });
   }
 };
