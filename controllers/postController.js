@@ -1,20 +1,21 @@
 // Import necessary modules
 const multer = require('multer');
+// eslint-disable-next-line node/no-extraneous-require
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
 const Post = require('../models/postModel');
 
-//File filter to ensure only images are uploaded
+// File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true); // Allow the upload if the file is an image
   } else {
     cb(new Error('Not an image Please upload only images.'), false); // Reject the upload if the file is not an image
-    //TODO-> cb(new AppError('Not an image! Please upload only images.', 400), false);
   }
 };
+
 const multerStorage = multer.memoryStorage();
 
 // Initialize multer with the configured storage and file filter
@@ -52,8 +53,14 @@ exports.getAllPosts = async (req, res) => {
     // Execute the query to fetch posts
     let query = Post.find(JSON.parse(queryStr));
 
-    // Always sort by date
     query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
+
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.selcet(fields);
+    } else {
+      query = query.select('-__v');
+    }
 
     const posts = await query;
 
@@ -164,10 +171,10 @@ exports.deletePost = async (req, res) => {
 
 exports.deletePostImage = async (req, res) => {
   try {
-    // Předpokládáme, že název obrázku je součástí URL jako parametr
+    // Assuming the image name is part of the URL as a parameter
     const imageName = req.params.image;
 
-    // Konstrukce cesty k souboru obrázku
+    // Constructing the image file path
     const imagePath = path.join(
       __dirname,
       '..',
