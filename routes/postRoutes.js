@@ -1,4 +1,5 @@
 const express = require('express');
+
 const postController = require('../controllers/postController');
 
 const router = express.Router();
@@ -15,9 +16,13 @@ router
 router
   .route('/:id')
   .get(postController.getPost)
-  .patch(postController.updatePost)
+  .patch(
+    postController.uploadPostImg,
+    postController.resizePostImg,
+    postController.updatePost,
+  )
   .delete(postController.deletePost);
 
-router.delete('/deleteImg/:image', postController.deletePostImage);
+router.delete('/deleteImg/:imageName', postController.deletePostImage);
 
 module.exports = router;

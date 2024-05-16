@@ -32,6 +32,8 @@ exports.resizePostImg = (req, res, next) => {
     .avif({ quality: 90 })
     .toFile(`public/img/posts/${req.file.filename}`);
 
+  req.body.imageName = req.file.filename;
+
   next();
 };
 
@@ -93,7 +95,7 @@ exports.createPost = async (req, res) => {
     // Create a new post with the provided data and image
     const newPost = await Post.create({
       ...req.body,
-      image: req.file.filename,
+      imageName: req.file.filename,
     });
     // Send the response with the newly created post
     res.status(201).json({
@@ -119,6 +121,7 @@ exports.updatePost = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
     // Send the response with the updated post
     res.status(200).json({
       status: 'success',
@@ -157,8 +160,7 @@ exports.deletePost = async (req, res) => {
 exports.deletePostImage = async (req, res) => {
   try {
     // Assuming the image name is part of the URL as a parameter
-    const imageName = req.params.image;
-
+    const image = await req.params.imageName;
     // Constructing the image file path
     const imagePath = path.join(
       __dirname,
@@ -166,7 +168,7 @@ exports.deletePostImage = async (req, res) => {
       'public',
       'img',
       'posts',
-      imageName,
+      image,
     );
 
     if (!fs.existsSync(imagePath)) {
@@ -189,3 +191,25 @@ exports.deletePostImage = async (req, res) => {
     });
   }
 };
+
+// exports.getTourStats = async (req, res) => {
+//   try {
+//     const stats = Post.aggregate([
+//       {
+//         $match: { ratingsAverage: { $gte: 4.5 } },
+//       },
+//       {
+//         group: {
+//           _id: null,
+//           avgRating: { $avg: '$ratingsAverage' },
+//           avgPrice: { $avg: '$price' },
+//         },
+//       },
+//     ]);
+//   } catch (err) {
+//     res.status(404).json({
+//       status: 'fail',
+//       message: err.message,
+//     });
+//   }
+// };
