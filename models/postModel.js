@@ -21,7 +21,7 @@ const postSchema = new mongoose.Schema({
     type: Date,
     default: Date.now, // Uses JavaScript's Date.now() for the current date/time
   },
-  image: {
+  imageName: {
     type: String,
     trim: true, // Removes leading/trailing spaces
   },

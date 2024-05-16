@@ -1,11 +1,11 @@
 // Import necessary modules
 const multer = require('multer');
-// eslint-disable-next-line node/no-extraneous-require
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
 const Post = require('../models/postModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 // File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
@@ -32,6 +32,8 @@ exports.resizePostImg = (req, res, next) => {
     .avif({ quality: 90 })
     .toFile(`public/img/posts/${req.file.filename}`);
 
+  req.body.imageName = req.file.filename;
+
   next();
 };
 
@@ -41,28 +43,13 @@ exports.uploadPostImg = upload.single('image');
 // Function to retrieve all posts
 exports.getAllPosts = async (req, res) => {
   try {
-    // Prepare the query object excluding certain fields
-    const queryObj = { ...req.query };
-    const excludeFields = ['page', 'limit', 'fields', 'sort', 'order']; // Remove 'sort' and 'order' from excluded fields
-    excludeFields.forEach((field) => delete queryObj[field]);
-
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    console.log(JSON.parse(queryStr));
-
-    // Execute the query to fetch posts
-    let query = Post.find(JSON.parse(queryStr));
-
-    query = query.sort({ date: req.query.order === 'desc' ? -1 : 1 });
-
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.selcet(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
-    const posts = await query;
+    //Building posts
+    const features = new APIFeatures(Post.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+    const posts = await features.query;
 
     // Send the response with the fetched posts
     res.status(200).json({
@@ -108,7 +95,7 @@ exports.createPost = async (req, res) => {
     // Create a new post with the provided data and image
     const newPost = await Post.create({
       ...req.body,
-      image: req.file.filename,
+      imageName: req.file.filename,
     });
     // Send the response with the newly created post
     res.status(201).json({
@@ -134,6 +121,7 @@ exports.updatePost = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
     // Send the response with the updated post
     res.status(200).json({
       status: 'success',
@@ -172,8 +160,7 @@ exports.deletePost = async (req, res) => {
 exports.deletePostImage = async (req, res) => {
   try {
     // Assuming the image name is part of the URL as a parameter
-    const imageName = req.params.image;
-
+    const image = await req.params.imageName;
     // Constructing the image file path
     const imagePath = path.join(
       __dirname,
@@ -181,7 +168,7 @@ exports.deletePostImage = async (req, res) => {
       'public',
       'img',
       'posts',
-      imageName,
+      image,
     );
 
     if (!fs.existsSync(imagePath)) {
@@ -204,3 +191,25 @@ exports.deletePostImage = async (req, res) => {
     });
   }
 };
+
+// exports.getTourStats = async (req, res) => {
+//   try {
+//     const stats = Post.aggregate([
+//       {
+//         $match: { ratingsAverage: { $gte: 4.5 } },
+//       },
+//       {
+//         group: {
+//           _id: null,
+//           avgRating: { $avg: '$ratingsAverage' },
+//           avgPrice: { $avg: '$price' },
+//         },
+//       },
+//     ]);
+//   } catch (err) {
+//     res.status(404).json({
+//       status: 'fail',
+//       message: err.message,
+//     });
+//   }
+// };
