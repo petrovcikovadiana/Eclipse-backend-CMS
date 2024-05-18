@@ -6,6 +6,8 @@ const postSchema = new mongoose.Schema({
     type: String,
     trim: true, // Removes leading/trailing spaces
     required: [true, 'A post must have a title.'], // Validator
+    maxlength: [80, 'A post title must have less or equal than 40 characters.'],
+    minlength: [5, 'A post title must have more or equal than 5 characters.'],
   },
   slug: {
     type: String,
