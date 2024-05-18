@@ -20,9 +20,9 @@ async function dbConnect() {
   }
 }
 
-dbConnect();
+dbConnect().catch((err) => console.error(err));
 
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 8000; // Corrected the port number
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
