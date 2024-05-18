@@ -94,6 +94,7 @@ exports.createPost = async (req, res) => {
   try {
     // Create a new post with the provided data and image
     const newPost = await Post.create({
+      runValidators: true,
       ...req.body,
       imageName: req.file.filename,
     });

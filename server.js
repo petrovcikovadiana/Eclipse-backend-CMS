@@ -4,19 +4,20 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   encodeURIComponent(process.env.DATABASE_PASSWORD),
-// );
+if (!process.env.DATABASE_LOCAL) {
+  throw new Error('DATABASE_LOCAL is not defined in config.env');
+}
 
 async function dbConnect() {
-  await mongoose
-    // .connect(DB, {
-    .connect(process.env.DATABASE_LOCAL, {
+  try {
+    await mongoose.connect(process.env.DATABASE_LOCAL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    })
-    .then(() => console.log('DB connection established'));
+    });
+    console.log('DB connection established');
+  } catch (err) {
+    console.error('DB connection error:', err);
+  }
 }
 
 dbConnect().catch((err) => console.error(err));
