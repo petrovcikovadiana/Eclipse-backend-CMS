@@ -4,24 +4,26 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-// const DB = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   encodeURIComponent(process.env.DATABASE_PASSWORD),
-// );
-
-async function dbConnect() {
-  await mongoose
-    // .connect(DB, {
-    .connect(process.env.DATABASE_LOCAL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .then(() => console.log('DB connection established'));
+// Kontrola, že proměnná DATABASE_LOCAL je načtena správně
+if (!process.env.DATABASE_LOCAL) {
+  throw new Error('DATABASE_LOCAL is not defined in config.env');
 }
 
-dbConnect().catch((err) => console.error(err));
+async function dbConnect() {
+  try {
+    await mongoose.connect(process.env.DATABASE_LOCAL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('DB connection established');
+  } catch (err) {
+    console.error('DB connection error:', err);
+  }
+}
 
-const port = process.env.PORT || 8000; // Corrected the port number
+dbConnect();
+
+const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
