@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-// Kontrola, že proměnná DATABASE_LOCAL je načtena správně
 if (!process.env.DATABASE_LOCAL) {
   throw new Error('DATABASE_LOCAL is not defined in config.env');
 }
