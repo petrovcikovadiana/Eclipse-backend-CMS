@@ -2,9 +2,10 @@ const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
 
-const router = express.router();
+const router = express.Router(); // Correct function is Router, not router
 
-router.post('/signup', authController.signup.signup);
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
 
 router
   .route('/')
@@ -12,7 +13,7 @@ router
   .post(userController.createUser);
 
 router
-  .router('/:id')
+  .route('/:id')
   .get(userController.getUser)
   .patch(userController.updateUser)
   .delete(userController.deleteUser);
