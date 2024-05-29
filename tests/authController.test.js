@@ -91,7 +91,7 @@ describe('authController', () => {
 
     it('should throw an error if credentials are incorrect', async () => {
       User.findOne.mockReturnValue({
-        select: jest.fn().mockResolvedValue(null), // Ensure this returns null to mimic user not found
+        select: jest.fn().mockResolvedValue(null),
       });
 
       const req = {
