@@ -60,7 +60,12 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordChangedAt,
     role,
   });
-  createSendToken(newUser, 201, res);
+  res.status(201).json({
+    status: 'success',
+    data: {
+      user: newUser,
+    },
+  });
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -210,4 +215,44 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
   // 4) Log user in, send JWT
   createSendToken(user, 200, res);
+});
+
+exports.checkToken = catchAsync(async (req, res, next) => {
+  // 1) Getting token from cookies
+  let token;
+  if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+
+  if (!token) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'You are not logged in! Please log in to get access.',
+    });
+  }
+
+  // 2) Verification token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // 3) Check if user still exists
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'The user belonging to this token does no longer exist.',
+    });
+  }
+
+  // 4) Check if user changed password after the token was issued
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'User recently changed password! Please log in again.',
+    });
+  }
+
+  // Token is valid
+  res.status(200).json({
+    status: 'success',
+  });
 });
