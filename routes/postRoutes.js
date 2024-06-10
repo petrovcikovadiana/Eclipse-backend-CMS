@@ -7,8 +7,9 @@ const router = express.Router();
 
 router
   .route('/')
-  .get(authController.protect, postController.getAllPosts)
+  .get(postController.getAllPosts)
   .post(
+    authController.protect,
     postController.uploadPostImg,
     postController.resizePostImg,
     postController.createPost,
@@ -18,6 +19,7 @@ router
   .route('/:id')
   .get(postController.getPost)
   .patch(
+    authController.protect,
     postController.uploadPostImg,
     postController.resizePostImg,
     postController.updatePost,

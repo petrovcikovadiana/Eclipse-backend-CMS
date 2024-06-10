@@ -218,31 +218,33 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 });
 
 exports.checkToken = catchAsync(async (req, res, next) => {
-  // 1) Getting token from cookies
   let token;
-  if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {
-    return res.status(401).json({
-      status: 'fail',
-      message: 'You are not logged in! Please log in to get access.',
-    });
+    return next(
+      new AppError('You are not logged in! Please log in to get access.', 401),
+    );
   }
-
-  // 2) Verification token
+  // 2) Verification
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  // 3) Check if user still exists
+  // 3) Check if user exists
   const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return res.status(401).json({
-      status: 'fail',
-      message: 'The user belonging to this token does no longer exist.',
-    });
-  }
 
+  if (!currentUser) {
+    return next(
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
+    );
+  }
   // 4) Check if user changed password after the token was issued
   if (currentUser.changedPasswordAfter(decoded.iat)) {
     return res.status(401).json({
