@@ -1,19 +1,25 @@
 const nodemailer = require('nodemailer');
-
-// new Email (user, url).sendWelcome()
+const pug = require('pug');
+const { convert } = require('html-to-text');
 
 module.exports = class Email {
   constructor(user, url) {
     this.to = user.email;
-    this.firstName = user.name.split(' ')[0];
+    this.firstName = user.userName.split(' ')[0];
     this.url = url;
     this.from = `CloudyLake Team <${process.env.EMAIL_FROM}>`;
   }
 
-  createTransport() {
+  newTransport() {
     if (process.env.NODE_ENV === 'production') {
-      // Sendgrid
-      return 1;
+      // SENDINBLUE
+      return nodemailer.createTransport({
+        service: 'SendinBlue',
+        auth: {
+          user: process.env.SENDINBLUE_USERNAME,
+          pass: process.env.SENDINBLUE_PASSWORD,
+        },
+      });
     }
 
     return nodemailer.createTransport({
@@ -26,26 +32,39 @@ module.exports = class Email {
     });
   }
 
-  send(template, subject) {
-    // Sent the actual email
+  // Sent the actual email
+  async send(template, subject) {
+    // 1) Render HTML
+    const html = pug.renderFile(
+      `${__dirname}/../views/emails/${template}.pug`,
+      {
+        firstName: this.firstName,
+        url: this.url,
+        subject,
+      },
+    );
+
+    // 2) Define email options
+    const mailOptions = {
+      from: this.from,
+      to: this.to,
+      subject,
+      html,
+      text: convert(html),
+    };
+
+    // 3) Create a transporter and send the email
+    await this.newTransport().sendMail(mailOptions);
   }
 
-  sendWelcome() {
-    this.send('Welcome', 'Welcome to the CloudyLake Family!');
+  async sendWelcome() {
+    await this.send('welcome', 'Welcome to the CloudyLake Family!');
   }
-};
 
-const sendEmail = (options) => {
-  // Define the email options
-  const mailOptions = {
-    from: 'Ondřej Polák <ondrej.polak@webgroo.com>',
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-    // html:
-  };
-
-  // Actually send the email
-
-  transporter.sendMail(mailOptions);
+  async sendPasswordReset() {
+    await this.send(
+      'passwordReset',
+      'Your password reset token (valid for only 10 minutes)',
+    );
+  }
 };
