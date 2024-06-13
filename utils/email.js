@@ -5,7 +5,9 @@ const { convert } = require('html-to-text');
 module.exports = class Email {
   constructor(user, url) {
     this.to = user.email;
-    this.firstName = user.userName.split(' ')[0];
+    if (user.userName) {
+      this.firstName = user.userName.split(' ')[0];
+    }
     this.url = url;
     this.from = `CloudyLake Team <${process.env.EMAIL_FROM}>`;
   }
@@ -65,6 +67,13 @@ module.exports = class Email {
     await this.send(
       'passwordReset',
       'Your password reset token (valid for only 10 minutes)',
+    );
+  }
+
+  async sendTenantInvite() {
+    await this.send(
+      'tenantInvite',
+      'You have been invited to Eclipse by CloudyLake!',
     );
   }
 };
