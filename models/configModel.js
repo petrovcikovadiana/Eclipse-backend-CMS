@@ -1,7 +1,12 @@
-// Importing Mongoose to interact with MongoDB
 const mongoose = require('mongoose');
 
+// Define schema for configurations
 const configSchema = new mongoose.Schema({
+  tenant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tenant',
+    required: [true, 'A config must belong to a tenant.'],
+  },
   config_key: {
     type: String,
     required: [true, 'A config key must be set'],
@@ -14,5 +19,4 @@ const configSchema = new mongoose.Schema({
 
 const Config = mongoose.model('Config', configSchema);
 
-// Exporting the model for use in the application
 module.exports = Config;

@@ -2,17 +2,16 @@ const express = require('express');
 const configController = require('../controllers/configController');
 const authController = require('../controllers/authController');
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router
   .route('/')
-  .get(configController.getAllConfigs)
-  .post(authController.protect, configController.createConfig)
-  .patch(authController.protect, configController.updateConfig);
+  .get(authController.protect, configController.getAllConfigs)
+  .post(authController.protect, configController.createConfig);
 
 router
   .route('/:config_key')
-  .get(configController.getConfig)
+  .get(authController.protect, configController.getConfig)
   .patch(authController.protect, configController.updateConfig)
   .delete(authController.protect, configController.deleteConfig);
 

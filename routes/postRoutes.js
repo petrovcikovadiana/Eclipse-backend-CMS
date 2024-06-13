@@ -1,9 +1,10 @@
 const express = require('express');
-
 const postController = require('../controllers/postController');
 const authController = require('../controllers/authController');
+const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
+router.use(attachTenantId); // Použití middleware pro extrakci tenantId
 
 router
   .route('/')
@@ -26,7 +27,7 @@ router
   )
   .delete(
     authController.protect,
-    authController.restrictTo('super-admin', 'admin', 'manager'),
+    // authController.restrictTo('super-admin', 'admin', 'manager'),
     postController.deletePost,
   );
 

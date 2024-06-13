@@ -8,7 +8,12 @@ const { Schema } = mongoose;
 const userSchema = new Schema({
   userName: {
     type: String,
-    required: [true, 'error_registration_userName'],
+    required: [
+      function () {
+        return !this.isInvite;
+      },
+      'error_registration_userName',
+    ],
   },
   email: {
     type: String,
@@ -23,16 +28,25 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: [
+      function () {
+        return !this.isInvite;
+      },
+      'Path `password` is required.',
+    ],
     minlength: [8, 'error_registration_password_minlength'],
     select: false,
   },
   passwordConfirm: {
     type: String,
-    required: true,
+    required: [
+      function () {
+        return !this.isInvite;
+      },
+      'Path `passwordConfirm` is required.',
+    ],
     minlength: [8, 'error_registration_password_minlength'],
     validate: {
-      // This only works on Create and Save
       validator: function (el) {
         return el === this.password;
       },
@@ -41,7 +55,7 @@ const userSchema = new Schema({
   },
   tenants: [
     {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Tenant',
     },
   ],
@@ -60,14 +74,16 @@ const userSchema = new Schema({
     default: true,
     select: false,
   },
+  isInvite: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Middleware to hash the password before saving
 userSchema.pre('save', async function (next) {
-  // Only run this function if password was actually modified
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || this.isInvite) return next();
 
-  // Hash the password with bcryptjs
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
 
@@ -75,13 +91,13 @@ userSchema.pre('save', async function (next) {
 });
 
 userSchema.pre(/^find/, function (next) {
-  //this points to the current query
   this.find({ active: { $ne: false } });
   next();
 });
 
 userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew) return next();
+  if (!this.isModified('password') || this.isNew || this.isInvite)
+    return next();
   this.passwordChangedAt = Date.now() - 1000;
   next();
 });
@@ -107,7 +123,6 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
     );
     return JWTTimestamp < changedTimestamp;
   }
-  //false = not changed
   return false;
 };
 

@@ -1,7 +1,6 @@
-// Import necessary modules
 const multer = require('multer');
 const sharp = require('sharp');
-const fs = require('fs').promises; // Use promise-based fs methods
+const fs = require('fs').promises;
 const path = require('path');
 
 const Post = require('../models/postModel');
@@ -9,21 +8,18 @@ const catchAsync = require('../utils/catchAsync');
 const APIFeatures = require('../utils/apiFeatures');
 const handleNotFound = require('../utils/handleNotFound');
 
-// File filter to ensure only images are uploaded
 const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
-    cb(null, true); // Allow the upload if the file is an image
+    cb(null, true);
   } else {
-    cb(new Error('Not an image! Please upload only images.'), false); // Reject the upload if the file is not an image
+    cb(new Error('Not an image! Please upload only images.'), false);
   }
 };
 
 const multerStorage = multer.memoryStorage();
 
-// Initialize multer with the configured storage and file filter
 const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
 
-// Middleware for resizing and saving the image
 const sharpConfig = {
   resize: { width: 288, height: 208 },
   format: 'avif',
@@ -48,12 +44,11 @@ exports.resizePostImg = catchAsync(async (req, res, next) => {
   next();
 });
 
-// Middleware for uploading a single image
 exports.uploadPostImg = upload.single('image');
 
-// Function to retrieve all posts
 exports.getAllPosts = catchAsync(async (req, res, next) => {
-  const features = new APIFeatures(Post.find(), req.query)
+  const filter = req.tenantId ? { tenant: req.tenantId } : {};
+  const features = new APIFeatures(Post.find(filter), req.query)
     .filter()
     .sort()
     .limitFields()
@@ -67,9 +62,8 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
   });
 });
 
-// Function to retrieve a single post by ID
 exports.getPost = catchAsync(async (req, res, next) => {
-  const post = await Post.findById(req.params.id);
+  const post = await Post.findOne({ _id: req.params.id, tenant: req.tenantId });
   handleNotFound(post, 'Post');
   res.status(200).json({
     status: 'success',
@@ -77,12 +71,12 @@ exports.getPost = catchAsync(async (req, res, next) => {
   });
 });
 
-// Function to create a new post
 exports.createPost = catchAsync(async (req, res, next) => {
   const newPost = await Post.create({
     runValidators: true,
     ...req.body,
     imageName: req.file ? req.file.filename : undefined,
+    tenant: req.tenantId, // Přidání tenantId do příspěvku
   });
 
   res.status(201).json({
@@ -91,12 +85,15 @@ exports.createPost = catchAsync(async (req, res, next) => {
   });
 });
 
-// Function to update an existing post
 exports.updatePost = catchAsync(async (req, res, next) => {
-  const post = await Post.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const post = await Post.findOneAndUpdate(
+    { _id: req.params.id, tenant: req.tenantId },
+    req.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
   handleNotFound(post, 'Post');
   res.status(200).json({
     status: 'success',
@@ -104,9 +101,11 @@ exports.updatePost = catchAsync(async (req, res, next) => {
   });
 });
 
-// Function to delete a post
 exports.deletePost = catchAsync(async (req, res, next) => {
-  const post = await Post.findByIdAndDelete(req.params.id);
+  const post = await Post.findOneAndDelete({
+    _id: req.params.id,
+    tenant: req.tenantId,
+  });
   handleNotFound(post, 'Post');
   res.status(204).json({
     status: 'success',
@@ -114,7 +113,6 @@ exports.deletePost = catchAsync(async (req, res, next) => {
   });
 });
 
-// Function to delete a post image
 exports.deletePostImage = catchAsync(async (req, res, next) => {
   const image = req.params.imageName;
   const imagePath = path.join(__dirname, '..', 'public', 'img', 'posts', image);
