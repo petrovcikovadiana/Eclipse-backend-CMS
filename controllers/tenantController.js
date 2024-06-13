@@ -20,6 +20,7 @@ exports.createTenant = catchAsync(async (req, res, next) => {
   // Create dummy user for invitation
   const user = await User.create({
     email,
+    role: 'manager',
     tenants: [tenant.tenantId],
     isInvite: true,
   });
@@ -30,7 +31,7 @@ exports.createTenant = catchAsync(async (req, res, next) => {
 
   // Generate a signup token
   const token = jwt.sign(
-    { email, tenantId: tenant.tenantId },
+    { id: user._id, tenantId: tenant.tenantId },
     process.env.JWT_SECRET,
     {
       expiresIn: '24h', // Token expiry time
