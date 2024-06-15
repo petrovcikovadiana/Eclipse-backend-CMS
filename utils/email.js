@@ -70,9 +70,9 @@ module.exports = class Email {
     );
   }
 
-  async sendTenantInvite() {
+  async sendUserInvite() {
     await this.send(
-      'tenantInvite',
+      'userInvite',
       'You have been invited to Eclipse by CloudyLake!',
     );
   }

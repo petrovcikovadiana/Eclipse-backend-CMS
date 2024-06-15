@@ -4,7 +4,9 @@ const handleNotFound = require('../utils/handleNotFound');
 
 // Retrieve all configurations for a specific tenant
 exports.getAllConfigs = catchAsync(async (req, res, next) => {
-  const configs = await Config.find({ tenant: req.params.tenantId });
+  const configs = await Config.find({
+    tenant: req.params.tenantId || req.tenantId,
+  });
   res.status(200).json({
     status: 'success',
     results: configs.length,
@@ -18,7 +20,7 @@ exports.getAllConfigs = catchAsync(async (req, res, next) => {
 exports.getConfig = catchAsync(async (req, res, next) => {
   const config = await Config.findOne({
     config_key: req.params.config_key,
-    tenant: req.params.tenantId,
+    tenant: req.params.tenantId || req.tenantId,
   });
   handleNotFound(config, 'Configuration');
 
@@ -47,7 +49,10 @@ exports.createConfig = catchAsync(async (req, res, next) => {
 // Update an existing configuration
 exports.updateConfig = catchAsync(async (req, res, next) => {
   const config = await Config.findOneAndUpdate(
-    { config_key: req.params.config_key, tenant: req.params.tenantId },
+    {
+      config_key: req.params.config_key,
+      tenant: req.params.tenantId || req.tenantId,
+    },
     req.body,
     { new: true },
   );
