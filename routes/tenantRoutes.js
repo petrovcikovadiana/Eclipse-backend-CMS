@@ -22,9 +22,6 @@ router
   .patch(tenantController.updateTenant)
   .delete(tenantController.deleteTenant);
 
-// Invite user to tenant
-router.post('/:tenantId/invite', tenantController.inviteUser);
-
 // Nested routes for posts and configs
 router.use('/:tenantId/posts', postRouter);
 router.use('/:tenantId/configs', configRouter);

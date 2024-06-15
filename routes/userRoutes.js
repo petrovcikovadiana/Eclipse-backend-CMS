@@ -1,6 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
+const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 
 const router = express.Router(); // Correct function is Router, not router
 
@@ -27,9 +28,25 @@ router
   .post(authController.protect, userController.createUser);
 
 router
+  .route('/tenant')
+  .get(
+    attachTenantId,
+    authController.protect,
+    userController.getAllTenantUsers,
+  );
+
+router
   .route('/:id')
   .get(authController.protect, userController.getUser)
   .patch(authController.protect, userController.updateUser)
   .delete(authController.protect, userController.deleteUser);
+
+// Invite user to tenant
+router.post(
+  '/invite',
+  attachTenantId,
+  authController.protect,
+  userController.inviteUser,
+);
 
 module.exports = router;

@@ -40,45 +40,12 @@ exports.createTenant = catchAsync(async (req, res, next) => {
 
   const signupUrl = `${req.protocol}://${req.get('host')}/signup?token=${token}`;
 
-  await new Email(user, signupUrl).sendTenantInvite();
+  await new Email(user, signupUrl).sendUserInvite();
 
   res.status(201).json({
     status: 'success',
     data: {
       tenant,
-    },
-  });
-});
-
-exports.inviteUser = catchAsync(async (req, res, next) => {
-  const { email } = req.body;
-  const tenantId = req.params.tenantId;
-
-  if (!email) {
-    return next(new AppError('Please provide email.', 400));
-  }
-
-  const user = await User.create({
-    email,
-    tenants: [tenantId],
-    isInvite: true,
-  });
-
-  // Find the tenant and add the user to the tenant's users array
-  const tenant = await Tenant.findOne({ tenantId });
-  tenant.users.push(user._id);
-  await tenant.save();
-
-  const token = jwt.sign({ email, tenantId }, process.env.JWT_SECRET, {
-    expiresIn: '24h',
-  });
-  const signupUrl = `${req.protocol}://${req.get('host')}/signup?token=${token}`;
-  await new Email(user, signupUrl).sendTenantInvite();
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      user,
     },
   });
 });

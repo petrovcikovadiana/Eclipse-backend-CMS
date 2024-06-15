@@ -1,8 +1,10 @@
 const express = require('express');
 const configController = require('../controllers/configController');
 const authController = require('../controllers/authController');
+const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 
 const router = express.Router({ mergeParams: true });
+router.use(attachTenantId); // Použití middleware pro extrakci tenantId
 
 router
   .route('/')
