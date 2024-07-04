@@ -4,17 +4,55 @@ const authController = require('../controllers/authController');
 const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 
 const router = express.Router({ mergeParams: true });
-router.use(attachTenantId); // Použití middleware pro extrakci tenantId
 
 router
   .route('/')
-  .get(authController.protect, configController.getAllConfigs)
-  .post(authController.protect, configController.createConfig);
+  .get(attachTenantId, configController.getAllConfigs)
+  .post(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin', 'manager', 'editor'),
+    attachTenantId,
+    configController.createConfig,
+  );
 
 router
-  .route('/:config_key')
-  .get(authController.protect, configController.getConfig)
-  .patch(authController.protect, configController.updateConfig)
-  .delete(authController.protect, configController.deleteConfig);
+  .route('/all')
+  .get(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin'),
+    configController.getAllConfigsWithoutTenant,
+  );
+
+router
+  .route('/key/:config_key')
+  .get(attachTenantId, configController.getConfigByKey)
+  .patch(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin', 'manager', 'editor'),
+    configController.updateConfigByKey,
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin', 'manager', 'editor'),
+    configController.deleteConfigByKey,
+  );
+
+router
+  .route('/:id')
+  .get(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin', 'manager', 'editor'),
+    configController.getConfigById,
+  )
+  .patch(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin', 'manager', 'editor'),
+    configController.updateConfigById,
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo('super-admin', 'admin'),
+    configController.deleteConfigById,
+  );
 
 module.exports = router;

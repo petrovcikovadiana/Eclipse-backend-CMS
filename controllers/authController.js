@@ -16,15 +16,6 @@ const signToken = (id, tenantId) =>
 
 const createSendToken = (user, tenantId, statusCode, res) => {
   const token = signToken(user._id, tenantId);
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES * 24 * 60 * 60 * 1000,
-    ),
-    httpOnly: true,
-  };
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
-  res.cookie('jwt', token, cookieOptions);
 
   // Remove password from output
   user.password = undefined;
@@ -45,7 +36,6 @@ exports.signup = catchAsync(async (req, res, next) => {
     password,
     passwordConfirm,
     passwordChangedAt,
-    role,
     tenantId,
   } = req.body;
 
@@ -62,7 +52,6 @@ exports.signup = catchAsync(async (req, res, next) => {
     user.password = password;
     user.passwordConfirm = passwordConfirm;
     user.passwordChangedAt = passwordChangedAt;
-    user.role = role;
     user.isInvite = false;
     await user.save();
   } else {
@@ -73,8 +62,7 @@ exports.signup = catchAsync(async (req, res, next) => {
       password,
       passwordConfirm,
       passwordChangedAt,
-      role,
-      tenants: [tenantId],
+      tenantId: [tenantId],
     });
   }
 
@@ -98,7 +86,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401));
   }
 
-  const tenantId = user.tenants[0];
+  const tenantId = user.tenantId[0];
   createSendToken(user, tenantId, 200, res);
 });
 
@@ -203,7 +191,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  createSendToken(user, user.tenants[0], 200, res);
+  createSendToken(user, user.tenantId[0], 200, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -214,7 +202,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   await user.save();
-  createSendToken(user, user.tenants[0], 200, res);
+  createSendToken(user, user.tenantId[0], 200, res);
 });
 
 exports.checkToken = catchAsync(async (req, res, next) => {
@@ -232,26 +220,33 @@ exports.checkToken = catchAsync(async (req, res, next) => {
     );
   }
 
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  const currentUser = await User.findById(decoded.id);
+  try {
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  if (!currentUser) {
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(
+        new AppError(
+          'The user belonging to this token does no longer exist.',
+          401,
+        ),
+      );
+    }
+
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return res.status(401).json({
+        status: 'fail',
+        message: 'User recently changed password! Please log in again.',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+    });
+  } catch (err) {
+    console.error('Error validating token:', err);
     return next(
-      new AppError(
-        'The user belonging to this token does no longer exist.',
-        401,
-      ),
+      new AppError('Error validating token. Please try again later.', 500),
     );
   }
-
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
-    return res.status(401).json({
-      status: 'fail',
-      message: 'User recently changed password! Please log in again.',
-    });
-  }
-
-  res.status(200).json({
-    status: 'success',
-  });
 });

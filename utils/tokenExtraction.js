@@ -2,22 +2,38 @@ const jwt = require('jsonwebtoken');
 const AppError = require('./appError');
 
 module.exports = (req, res, next) => {
+  let tenantId;
+  let token;
+
+  // Zkuste získat token z hlavičky Authorization
   if (
-    !req.headers.authorization ||
-    !req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
   ) {
-    return next(
-      new AppError('You are not logged in! Please log in to get access.', 401),
-    );
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  const token = req.headers.authorization.split(' ')[1];
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-  if (!decoded.tenantId) {
-    return next(new AppError('No tenantId found in token.', 401));
+  // Zkuste získat token z cookies
+  if (!token && req.cookies && req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
 
-  req.tenantId = decoded.tenantId; // Use tenantId directly as string
+  // Ověřte a dekódujte token
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      tenantId = decoded.tenantId;
+    } catch (err) {
+      return next(new AppError('Invalid token. Please log in again.', 401));
+    }
+  }
+
+  // Zkuste získat tenantId z těla požadavku nebo dotazu
+  if (!tenantId) {
+    tenantId = req.body.tenantId || req.query.tenantId;
+  }
+
+  // Nastavte tenantId do požadavku
+  req.tenantId = tenantId;
   next();
 };

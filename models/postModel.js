@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
+  tenantId: {
+    type: String, // Use String for tenantId
+    ref: 'Tenant',
+    required: [true, 'A post must belong to a tenant.'],
+  },
   title: {
     type: String,
     trim: true,
@@ -25,11 +30,6 @@ const postSchema = new mongoose.Schema({
   imageName: {
     type: String,
     trim: true,
-  },
-  tenant: {
-    type: String, // Use String for tenantId
-    ref: 'Tenant',
-    required: [true, 'A post must belong to a tenant.'],
   },
 });
 

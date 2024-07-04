@@ -18,7 +18,12 @@ const multerFilter = (req, file, cb) => {
 
 const multerStorage = multer.memoryStorage();
 
-const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+// Initialize multer with the configured storage and file filter
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
 
 const sharpConfig = {
   resize: { width: 288, height: 208 },
@@ -47,7 +52,7 @@ exports.resizePostImg = catchAsync(async (req, res, next) => {
 exports.uploadPostImg = upload.single('image');
 
 exports.getAllPosts = catchAsync(async (req, res, next) => {
-  const filter = req.tenantId ? { tenant: req.tenantId } : {};
+  const filter = { tenantId: req.tenantId || req.params.tenantId };
   const features = new APIFeatures(Post.find(filter), req.query)
     .filter()
     .sort()
@@ -63,7 +68,10 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
 });
 
 exports.getPost = catchAsync(async (req, res, next) => {
-  const post = await Post.findOne({ _id: req.params.id, tenant: req.tenantId });
+  const post = await Post.findOne({
+    _id: req.params.id,
+    tenantId: req.params.tenantId || req.tenantId,
+  });
   handleNotFound(post, 'Post');
   res.status(200).json({
     status: 'success',
@@ -76,7 +84,7 @@ exports.createPost = catchAsync(async (req, res, next) => {
     runValidators: true,
     ...req.body,
     imageName: req.file ? req.file.filename : undefined,
-    tenant: req.tenantId, // Přidání tenantId do příspěvku
+    tenantId: req.params.tenantId || req.tenantId,
   });
 
   res.status(201).json({
@@ -87,7 +95,7 @@ exports.createPost = catchAsync(async (req, res, next) => {
 
 exports.updatePost = catchAsync(async (req, res, next) => {
   const post = await Post.findOneAndUpdate(
-    { _id: req.params.id, tenant: req.tenantId },
+    { _id: req.params.id, tenantId: req.params.tenantId || req.tenantId },
     req.body,
     {
       new: true,
@@ -104,7 +112,7 @@ exports.updatePost = catchAsync(async (req, res, next) => {
 exports.deletePost = catchAsync(async (req, res, next) => {
   const post = await Post.findOneAndDelete({
     _id: req.params.id,
-    tenant: req.tenantId,
+    tenantId: req.params.tenantId || req.tenantId,
   });
   handleNotFound(post, 'Post');
   res.status(204).json({

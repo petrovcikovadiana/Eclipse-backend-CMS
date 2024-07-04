@@ -1,8 +1,8 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const APIFeatures = require('../utils/apiFeatures');
-const jwt = require('jsonwebtoken');
 const handleNotFound = require('../utils/handleNotFound');
 const Tenant = require('../models/tenantModel');
 const Email = require('../utils/email');
@@ -29,7 +29,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 
 // Controller to get all users
 exports.getAllTenantUsers = catchAsync(async (req, res, next) => {
-  const filter = req.tenantId ? { tenants: req.tenantId } : {};
+  const filter = { tenantId: req.tenantId };
   const features = new APIFeatures(User.find(filter), req.query)
     .filter()
     .sort()
@@ -75,7 +75,7 @@ exports.inviteUser = catchAsync(async (req, res, next) => {
       user = await User.create({
         email,
         role: 'user',
-        tenants: [req.tenantId],
+        tenantId: [req.tenantId],
         isInvite: true,
       });
     }
@@ -164,7 +164,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   handleNotFound(user, 'User');
 
   // Najít tenanta a odstranit uživatele ze seznamu uživatelů
-  const tenantId = user.tenants[0];
+  const tenantId = user.tenantId[0];
   if (tenantId) {
     const tenant = await Tenant.findOne({ tenantId });
     if (tenant) {
@@ -179,5 +179,34 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: 'success',
     data: null,
+  });
+});
+
+exports.getAllRoles = catchAsync(async (req, res, next) => {
+  // Načtení uživatele podle ID
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return next(new AppError('No user found with that ID', 404));
+  }
+
+  const userRole = user.role; // Použijeme roli uživatele získaného z databáze
+
+  let roles = ['super-admin', 'admin', 'manager', 'editor', 'user'];
+  switch (userRole) {
+    case 'super-admin':
+      break; // super-admin vidí vše
+    case 'admin':
+      roles = roles.filter((role) => role !== 'super-admin');
+      break;
+    case 'manager':
+      roles = ['manager', 'editor', 'user'];
+      break;
+    default:
+      roles = []; // editor a user nevidí žádné role
+  }
+
+  res.status(200).json({
+    status: 'success',
+    roles,
   });
 });
