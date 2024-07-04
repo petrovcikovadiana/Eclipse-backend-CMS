@@ -42,6 +42,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());

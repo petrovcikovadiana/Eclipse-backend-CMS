@@ -23,7 +23,7 @@ const userSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'manager', 'admin', 'super-admin'],
+    enum: ['user', 'editor', 'manager', 'admin', 'super-admin'],
     default: 'user',
   },
   password: {
@@ -53,7 +53,7 @@ const userSchema = new Schema({
       message: 'error_registration_password_match',
     },
   },
-  tenants: [
+  tenantId: [
     {
       type: String,
       ref: 'Tenant',

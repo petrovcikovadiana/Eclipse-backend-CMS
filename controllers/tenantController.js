@@ -21,7 +21,7 @@ exports.createTenant = catchAsync(async (req, res, next) => {
   const user = await User.create({
     email,
     role: 'manager',
-    tenants: [tenant.tenantId],
+    tenantId: [tenant.tenantId],
     isInvite: true,
   });
 
