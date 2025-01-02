@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
   let tenantId;
   let token;
 
-  // Zkuste získat token z hlavičky Authorization
+  // Extraction token from header authorization
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -13,12 +13,12 @@ module.exports = (req, res, next) => {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  // Zkuste získat token z cookies
+  // Extraction token from cookies
   if (!token && req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt;
   }
 
-  // Ověřte a dekódujte token
+  // Validate and decode token
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -28,12 +28,15 @@ module.exports = (req, res, next) => {
     }
   }
 
-  // Zkuste získat tenantId z těla požadavku nebo dotazu
+  // Extraction tenantId from body or request query or params
   if (!tenantId) {
-    tenantId = req.body.tenantId || req.query.tenantId;
+    tenantId = req.body.tenantId || req.query.tenantId || req.params.tenantId;
   }
 
-  // Nastavte tenantId do požadavku
-  req.tenantId = tenantId;
+  // Add tenantId to request
+  if (tenantId) {
+    req.tenantId = tenantId;
+    req.body.tenantId = tenantId; // Add to body request
+  }
   next();
 };

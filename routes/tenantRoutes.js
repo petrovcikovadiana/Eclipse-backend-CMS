@@ -4,6 +4,12 @@ const authController = require('../controllers/authController');
 const postRouter = require('./postRoutes');
 const configRouter = require('./configRoutes');
 const userRouter = require('./userRoutes');
+const priceListRouter = require('./priceListRoutes');
+const employeeRouter = require('./employeeRoutes');
+const tenantRouter = require('./tenantRoutes');
+const categoryRouter = require('./categoryRoutes');
+const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
+const priceListController = require('../controllers/priceListController');
 
 const router = express.Router();
 
@@ -24,6 +30,12 @@ router
     authController.restrictTo('super-admin', 'admin'),
     tenantController.getAllTenants,
   );
+router.put(
+  '/order',
+  authController.protect,
+  attachTenantId,
+  priceListController.updatePriceListOrder,
+);
 
 router
   .route('/:id')
@@ -47,5 +59,14 @@ router
 router.use('/:tenantId/posts', postRouter);
 router.use('/:tenantId/configs', configRouter);
 router.use('/:tenantId/users', userRouter);
+router.use('/:tenantId/categories', categoryRouter);
+router.use(
+  '/:tenantId/priceLists',
+  (req, res, next) => {
+    next();
+  },
+  priceListRouter,
+);
+router.use('/:tenantId/employees', attachTenantId, employeeRouter);
 
 module.exports = router;

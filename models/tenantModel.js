@@ -60,8 +60,8 @@ tenantSchema.pre('save', async function (next) {
 });
 
 // Indexes
-tenantSchema.index({ domain: 1 }, { unique: true });
-tenantSchema.index({ tenantId: 1 }, { unique: true });
+// tenantSchema.index({ domain: 1 }, { unique: true });
+// tenantSchema.index({ tenantId: 1 }, { unique: true });
 
 // Middleware to update `updatedAt` on `findOneAndUpdate` and `update`
 tenantSchema.pre('findOneAndUpdate', function (next) {

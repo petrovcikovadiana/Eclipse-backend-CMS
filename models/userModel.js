@@ -1,6 +1,6 @@
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const crypto = require('crypto'); // Node.js module for cryptographic functionality
+const mongoose = require('mongoose'); // MongoDB object modeling tool
+const bcrypt = require('bcryptjs'); // Library for hashing passwords
 
 const { Schema } = mongoose;
 
@@ -12,19 +12,19 @@ const userSchema = new Schema({
       function () {
         return !this.isInvite;
       },
-      'error_registration_userName',
+      'error_registration_userName', 
     ],
   },
   email: {
     type: String,
-    required: [true, 'error_registration_email'],
-    unique: true,
+    required: [true, 'error_registration_email'], 
+    unique: true, 
     lowercase: true,
   },
   role: {
     type: String,
-    enum: ['user', 'editor', 'manager', 'admin', 'super-admin'],
-    default: 'user',
+    enum: ['user', 'editor', 'manager', 'admin', 'super-admin'], 
+    default: 'user', 
   },
   password: {
     type: String,
@@ -32,10 +32,10 @@ const userSchema = new Schema({
       function () {
         return !this.isInvite;
       },
-      'Path `password` is required.',
+      'Path `password` is required.', 
     ],
-    minlength: [8, 'error_registration_password_minlength'],
-    select: false,
+    minlength: [8, 'error_registration_password_minlength'], 
+    select: false, // Password will not be returned in queries by default
   },
   passwordConfirm: {
     type: String,
@@ -45,23 +45,23 @@ const userSchema = new Schema({
       },
       'Path `passwordConfirm` is required.',
     ],
-    minlength: [8, 'error_registration_password_minlength'],
+    minlength: [8, 'error_registration_password_minlength'], 
     validate: {
       validator: function (el) {
-        return el === this.password;
+        return el === this.password; // Ensure passwords match
       },
-      message: 'error_registration_password_match',
+      message: 'error_registration_password_match', 
     },
   },
   tenantId: [
     {
       type: String,
-      ref: 'Tenant',
+      ref: 'Tenant', // Reference to the Tenant model
     },
   ],
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now, // Automatically set creation date
   },
   passwordChangedAt: Date,
   updatedAt: {
@@ -71,37 +71,45 @@ const userSchema = new Schema({
   passwordResetExpires: Date,
   active: {
     type: Boolean,
-    default: true,
-    select: false,
+    default: true, // Default to active
+    select: false, // Not included in query results by default
   },
   isInvite: {
     type: Boolean,
-    default: false,
+    default: false, // Indicates if the user is created via invitation
   },
 });
 
-// Middleware to hash the password before saving
+// Hash the password before saving if it was modified
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password') || this.isInvite) return next();
 
-  this.password = await bcrypt.hash(this.password, 12);
-  this.passwordConfirm = undefined;
+  this.password = await bcrypt.hash(this.password, 12); // Hash the password
+  this.passwordConfirm = undefined; // Remove confirmation field
 
   next();
 });
 
+// Exclude inactive users from queries
 userSchema.pre(/^find/, function (next) {
   this.find({ active: { $ne: false } });
   next();
 });
 
+// Update `passwordChangedAt` if the password was changed
 userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew || this.isInvite)
-    return next();
-  this.passwordChangedAt = Date.now() - 1000;
+  if (!this.isModified('password') || this.isNew || this.isInvite) return next();
+  this.passwordChangedAt = Date.now() - 1000; // Ensure timestamp is before token creation
   next();
 });
 
+// Update `updatedAt` before saving
+userSchema.pre('save', function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Method to check if the provided password matches the stored password
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword,
@@ -109,12 +117,7 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-// Middleware to update `updatedAt` before saving
-userSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
+// Check if the password was changed after a specific timestamp
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
     const changedTimestamp = parseInt(
@@ -126,19 +129,21 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 
+// Generate a password reset token
 userSchema.methods.createPasswordResetToken = function () {
   const resetToken = crypto.randomBytes(32).toString('hex');
 
   this.passwordResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
-    .digest('hex');
+    .digest('hex'); // Store the hashed version of the token
 
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // Token valid for 10 minutes
 
-  return resetToken;
+  return resetToken; // Return the plain reset token
 };
 
+// Create the User model
 const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+module.exports = User; 

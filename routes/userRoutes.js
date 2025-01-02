@@ -1,7 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/userController');
 const authController = require('../controllers/authController');
-const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
+const attachTenantId = require('../utils/tokenExtraction'); 
 
 const router = express.Router(); // Correct function is Router, not router
 
