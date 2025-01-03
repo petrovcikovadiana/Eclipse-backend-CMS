@@ -3,7 +3,6 @@ const sharp = require('sharp');
 const fs = require('fs').promises;
 const path = require('path');
 
-const Post = require('../models/postModel');
 const catchAsync = require('../utils/catchAsync');
 const APIFeatures = require('../utils/apiFeatures');
 const handleNotFound = require('../utils/handleNotFound');
@@ -34,7 +33,8 @@ const sharpConfig = {
 };
 
 exports.resizeEmployeeImg = catchAsync(async (req, res, next) => {
-  console.log('Request body before processing:', req.body);
+  // Skip if no file uploaded
+  if (!req.file) return next();
 
   const slug =
     req.body.slug || req.body.name?.toLowerCase().replace(/\s+/g, '-');
@@ -54,7 +54,6 @@ exports.resizeEmployeeImg = catchAsync(async (req, res, next) => {
         req.file.filename,
       ),
     );
-  console.log('Processing file:', req.file);
 
   req.body.imageName = req.file.filename;
 
@@ -62,17 +61,7 @@ exports.resizeEmployeeImg = catchAsync(async (req, res, next) => {
 });
 
 // Update image of employee
-exports.uploadEmployeeImg = (req, res, next) => {
-  upload.single('image')(req, res, (err) => {
-    if (err) {
-      console.error('Multer error:', err.message);
-      return res.status(400).json({ status: 'fail', message: err.message });
-    }
-    console.log('Uploaded file:', req.file); // Log uploaded file
-
-    next();
-  });
-};
+exports.uploadEmployeeImg = upload.single('image');
 
 // Get all employees
 exports.getAllEmployees = catchAsync(async (req, res, next) => {
@@ -124,48 +113,54 @@ exports.createEmployee = catchAsync(async (req, res, next) => {
 
 // Update employee
 exports.updateEmployee = catchAsync(async (req, res, next) => {
-  const employee = await Employee.findOne({
-    _id: req.params.id,
-    tenantId: req.params.tenantId || req.tenantId,
-  });
-
-  if (!employee) {
-    return next(new AppError('No employee found with that ID', 404));
-  }
-
-  if (req.file && employee.imageName) {
-    const oldImagePath = path.join(
-      __dirname,
-      '..',
-      'public',
-      'img',
-      'employees',
-      employee.imageName,
-    );
-
-    try {
-      await fs.unlink(oldImagePath);
-    } catch (err) {
-      console.error('Failed to delete old image:', err);
-    }
-  }
-
-  const updatedEmployee = await Employee.findOneAndUpdate(
-    { _id: req.params.id, tenantId: req.params.tenantId || req.tenantId },
+  const employee = await Employee.findOneAndUpdate(
     {
-      ...req.body,
-      imageName: req.file ? req.file.filename : employee.imageName,
+      _id: req.params.id,
+      tenantId: req.params.tenantId || req.tenantId,
     },
+    req.body,
     {
       new: true,
-      runValidators: true,
+      runValidators: true, // Validate input data
     },
   );
-
   res.status(200).json({
     status: 'success',
-    data: { employee: updatedEmployee },
+    data: { employee },
   });
+
+  //   if (!employee) {
+  //     return next(new AppError('No employee found with that ID', 404));
+  //   }
+
+  //   if (req.file && employee.imageName) {
+  //     const oldImagePath = path.join(
+  //       __dirname,
+  //       '..',
+  //       'public',
+  //       'img',
+  //       'employees',
+  //       employee.imageName,
+  //     );
+
+  //     try {
+  //       await fs.unlink(oldImagePath);
+  //     } catch (err) {
+  //       console.error('Failed to delete old image:', err);
+  //     }
+  //   }
+
+  //   const updatedEmployee = await Employee.findOneAndUpdate(
+  //     { _id: req.params.id, tenantId: req.params.tenantId || req.tenantId },
+  //     {
+  //       ...req.body,
+  //       imageName: req.file ? req.file.filename : employee.imageName,
+  //     },
+  //     {
+  //       new: true,
+  //       runValidators: true,
+  //     },
+  //   );
 });
 
 // Delete employee
@@ -216,13 +211,13 @@ exports.deleteEmployeeImage = catchAsync(async (req, res, next) => {
 
   try {
     await fs.access(imagePath);
-    await fs.unlink(imagePath);
   } catch (err) {
     return res.status(404).json({
       status: 'fail',
       message: 'Image file not found.',
     });
   }
+  await fs.unlink(imagePath);
 
   res.status(204).json({
     status: 'success',

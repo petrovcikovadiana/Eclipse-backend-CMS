@@ -61,6 +61,6 @@ router.use('/:tenantId/configs', configRouter);
 router.use('/:tenantId/users', userRouter);
 router.use('/:tenantId/categories', categoryRouter);
 router.use('/:tenantId/priceLists', priceListRouter);
-router.use('/:tenantId/employees', attachTenantId, employeeRouter);
+router.use('/:tenantId/employees', employeeRouter);
 
 module.exports = router;
