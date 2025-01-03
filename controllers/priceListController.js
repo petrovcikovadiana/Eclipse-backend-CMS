@@ -38,24 +38,28 @@ exports.getPriceList = catchAsync(async (req, res, next) => {
 
 // Update pricelist order
 exports.updatePriceListOrder = async (req, res) => {
-  const { priceLists } = req.body;
-  const tenantId = req.tenantId;
+  const { priceLists } = req.body; // Accepts an array of IDs in a new order
+  const tenantId = req.tenantId; // Extract tenantId from middleware
 
   if (!priceLists || !Array.isArray(priceLists)) {
-    return res.status(400).json({ error: 'Invalid data format.' });
+    return res
+      .status(400)
+      .json({ error: 'Invalid request. Expected an array of IDs.' });
   }
 
   try {
     for (let i = 0; i < priceLists.length; i++) {
+      const id = priceLists[i];
       await PriceList.updateOne(
-        { _id: priceLists[i], tenantId },
-        { $set: { order: i } },
+        { _id: id, tenantId }, // Condition
+        { $set: { order: i } }, // Update order
       );
     }
-    res.status(200).json({ message: 'Order updated successfully.' });
+
+    return res.status(200).json({ message: 'Order updated successfully.' });
   } catch (error) {
     console.error('Error updating order:', error);
-    res.status(500).json({ error: 'Failed to update order.' });
+    return res.status(500).json({ error: 'Failed to update order.' });
   }
 };
 

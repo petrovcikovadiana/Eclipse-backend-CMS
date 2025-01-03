@@ -6,7 +6,7 @@ const categorySchema = new mongoose.Schema({
     ref: 'Tenant',
     required: [true, 'A category must belong to a tenant.'],
   },
-  order: { type: Number, default: 0 }, // Array for order
+  order: { type: Number, default: 0 }, // Default order index, used when no value is explicitly provided
 
   // Name
   title: {

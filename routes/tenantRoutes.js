@@ -60,13 +60,7 @@ router.use('/:tenantId/posts', postRouter);
 router.use('/:tenantId/configs', configRouter);
 router.use('/:tenantId/users', userRouter);
 router.use('/:tenantId/categories', categoryRouter);
-router.use(
-  '/:tenantId/priceLists',
-  (req, res, next) => {
-    next();
-  },
-  priceListRouter,
-);
+router.use('/:tenantId/priceLists', priceListRouter);
 router.use('/:tenantId/employees', attachTenantId, employeeRouter);
 
 module.exports = router;

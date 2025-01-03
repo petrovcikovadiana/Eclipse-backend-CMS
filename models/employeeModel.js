@@ -5,15 +5,15 @@ const employeeSchema = new mongoose.Schema({
   tenantId: {
     type: String,
     ref: 'Tenant',
-    required: [true, 'A priceList must belong to a tenant.'],
+    required: [true, 'An employee must belong to a tenant.'],
   },
 
   // Name
   name: {
     type: String,
     trim: true,
-    required: [true, 'A employee must have a name.'],
-    maxlength: [80, 'A employee must have less or equal than 80 characters.'],
+    required: [true, 'An employee must have a name.'],
+    maxlength: [80, 'An employee must have less or equal than 80 characters.'],
   },
   // Description
   description: {
@@ -25,7 +25,7 @@ const employeeSchema = new mongoose.Schema({
   signature: {
     type: String,
     trim: true,
-    maxlength: [80, 'A employee must have less or equal than 80 characters.'],
+    maxlength: [80, 'An employee must have less or equal than 80 characters.'],
   },
   // Photo
   imageName: {

@@ -7,7 +7,7 @@ const priceListSchema = new mongoose.Schema({
     ref: 'Tenant',
     required: [true, 'A priceList must belong to a tenant.'],
   },
-  order: { type: Number, default: 0 }, 
+  order: { type: Number, default: 0 }, // Default order index, used when no value is explicitly provided
 
   // Title
   itemName: {

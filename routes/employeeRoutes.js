@@ -34,8 +34,8 @@ router
 
 router.delete(
   '/deleteImg/:imageName',
-  // authController.protect,
-  // attachTenantId,
+  authController.protect,
+  attachTenantId,
   employeeController.deleteEmployeeImage,
 );
 module.exports = router;
