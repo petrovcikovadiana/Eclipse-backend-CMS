@@ -34,8 +34,12 @@ const sharpConfig = {
 };
 
 exports.resizeEmployeeImg = catchAsync(async (req, res, next) => {
-  req.file.filename = `employee-${req.body.slug}-${Date.now()}.avif`;
+  console.log('Request body before processing:', req.body);
 
+  const slug =
+    req.body.slug || req.body.name?.toLowerCase().replace(/\s+/g, '-');
+
+  req.file.filename = `employee-${slug}-${Date.now()}.avif`;
   await sharp(req.file.buffer)
     .resize(sharpConfig.resize.width, sharpConfig.resize.height)
     .toFormat(sharpConfig.format)
@@ -50,6 +54,7 @@ exports.resizeEmployeeImg = catchAsync(async (req, res, next) => {
         req.file.filename,
       ),
     );
+  console.log('Processing file:', req.file);
 
   req.body.imageName = req.file.filename;
 
@@ -63,6 +68,8 @@ exports.uploadEmployeeImg = (req, res, next) => {
       console.error('Multer error:', err.message);
       return res.status(400).json({ status: 'fail', message: err.message });
     }
+    console.log('Uploaded file:', req.file); // Log uploaded file
+
     next();
   });
 };
@@ -100,7 +107,7 @@ exports.getEmployee = catchAsync(async (req, res, next) => {
   });
 });
 
-// Create employee 
+// Create employee
 exports.createEmployee = catchAsync(async (req, res, next) => {
   const newEmployee = await Employee.create({
     runValidators: true,
@@ -115,7 +122,7 @@ exports.createEmployee = catchAsync(async (req, res, next) => {
   });
 });
 
-// Update employee 
+// Update employee
 exports.updateEmployee = catchAsync(async (req, res, next) => {
   const employee = await Employee.findOne({
     _id: req.params.id,
@@ -161,7 +168,7 @@ exports.updateEmployee = catchAsync(async (req, res, next) => {
   });
 });
 
-// Delete employee 
+// Delete employee
 exports.deleteEmployee = catchAsync(async (req, res, next) => {
   const employee = await Employee.findOne({
     _id: req.params.id,
