@@ -28,10 +28,8 @@ app.use(
   '/img/employees',
   express.static(path.join(__dirname, 'public/img/employees')),
 );
+app.use('/img/posts', express.static(path.join(__dirname, 'public/img/posts')));
 
-app.use('/img/employees', (req, res) => {
-  res.status(404).send('Image not found.');
-});
 // 1) GLOBAL MIDDLEWARES
 console.log('process.env.NODE_ENV', process.env.NODE_ENV);
 // Set security HTTP headers

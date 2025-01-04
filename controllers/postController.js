@@ -13,7 +13,7 @@ const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true); // Accept the file
   } else {
-    cb(new Error('Not an image! Please upload only images.'), false); 
+    cb(new Error('Not an image! Please upload only images.'), false);
   }
 };
 
@@ -79,6 +79,7 @@ exports.getPost = catchAsync(async (req, res, next) => {
     _id: req.params.id,
     tenantId: req.params.tenantId || req.tenantId,
   }); // Find post by ID and tenant
+
   handleNotFound(post, 'Post'); // Handle case where post is not found
   res.status(200).json({
     status: 'success',
@@ -103,52 +104,112 @@ exports.createPost = catchAsync(async (req, res, next) => {
 
 // Update an existing post
 exports.updatePost = catchAsync(async (req, res, next) => {
-  const post = await Post.findOneAndUpdate(
-    { _id: req.params.id, tenantId: req.params.tenantId || req.tenantId },
-    req.body,
-    {
-      new: true,
-      runValidators: true, // Validate input data
-    },
-  );
-  handleNotFound(post, 'Post'); // Handle case where post is not found
+  // Find post by ID and tenantId
+  const post = await Post.findOne({
+    _id: req.params.id,
+    tenantId: req.params.tenantId || req.tenantId,
+  });
+
+  if (!post) {
+    return next(new AppError('No post found with this ID', 404));
+  }
+
+  // Check if image is changing
+  if (req.file && post.imageName) {
+    const oldImagePath = path.join(
+      __dirname,
+      '..',
+      'public',
+      'img',
+      'posts',
+      post.imageName,
+    );
+
+    try {
+      await fs.access(oldImagePath);
+      await fs.unlink(oldImagePath);
+    } catch (err) {
+      console.warn(`Old image ${post.imageName} not found. Skipping deletion.`);
+    }
+
+    // Set new value of `imageName` v `req.body`
+    req.body.imageName = req.file.filename;
+  }
+
+  // Update post
+  const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
   res.status(200).json({
     status: 'success',
-    data: { post },
+    data: { post: updatedPost },
   });
 });
 
 // Delete a post by ID
 exports.deletePost = catchAsync(async (req, res, next) => {
-  const post = await Post.findOneAndDelete({
+  const post = await Post.findOne({
     _id: req.params.id,
     tenantId: req.params.tenantId || req.tenantId,
-  }); // Find and delete post
-  handleNotFound(post, 'Post'); // Handle case where post is not found
+  });
+
+  // Delete image, if existing
+  if (post.imageName) {
+    const imagePath = path.join(
+      __dirname,
+      '..',
+      'public',
+      'img',
+      'posts',
+      post.imageName,
+    );
+    try {
+      await fs.access(imagePath);
+      await fs.unlink(imagePath);
+    } catch (err) {
+      console.error('Error deleting image:', err.message);
+    }
+  }
+
+  // Delete post
+  await Post.findByIdAndDelete(post._id);
+
   res.status(204).json({
     status: 'success',
-    data: null, // No content response
+    data: null,
   });
 });
 
 // Delete an image file associated with a post
 exports.deletePostImage = catchAsync(async (req, res, next) => {
-  const image = req.params.imageName; // Get image name from request
-  const imagePath = path.join(__dirname, '..', 'public', 'img', 'posts', image); // Construct file path
+  const image = req.params.imageName;
+  const tenantId = req.params.tenantId || req.tenantId;
 
-  try {
-    await fs.access(imagePath); // Check if file exists
-  } catch (err) {
+  const post = await Post.findOne({ imageName: image, tenantId });
+
+  if (!post) {
     return res.status(404).json({
       status: 'fail',
-      message: 'Image file not found.', 
+      message: 'No post found with this image and tenantId',
     });
   }
 
-  await fs.unlink(imagePath); // Delete file
+  // const imagePath = path.join(__dirname, '..', 'public', 'img', 'posts', image);
+
+  try {
+    // await fs.access(imagePath); // Zkontroluje, zda soubor existuje
+    // await fs.unlink(imagePath); // Smaže soubor
+  } catch (err) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'Image file not found.',
+    });
+  }
 
   res.status(204).json({
     status: 'success',
-    data: null, 
+    data: null,
   });
 });

@@ -3,7 +3,7 @@ const employeeController = require('../controllers/employeeController');
 const authController = require('../controllers/authController');
 const attachTenantId = require('../utils/tokenExtraction');
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router
   .route('/')

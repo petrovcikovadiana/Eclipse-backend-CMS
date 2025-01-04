@@ -11,7 +11,7 @@ const categoryRouter = require('./categoryRoutes');
 const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 const priceListController = require('../controllers/priceListController');
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 // router.use(
 //   authController.protect,

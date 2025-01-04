@@ -21,7 +21,7 @@ const multerStorage = multer.memoryStorage();
 
 // Initialize multer with the configured storage and file filter
 const upload = multer({
-  storage: multer.memoryStorage(), // Add folders to memory
+  storage: multerStorage, // Add folders to memory
   fileFilter: multerFilter,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
@@ -86,9 +86,7 @@ exports.getEmployee = catchAsync(async (req, res, next) => {
     _id: req.params.id,
     tenantId: req.params.tenantId || req.tenantId,
   });
-  if (!employee) {
-    return next(new AppError('No employee found with this ID', 404));
-  }
+
   handleNotFound(employee, 'Employee');
   res.status(200).json({
     status: 'success',
@@ -113,68 +111,14 @@ exports.createEmployee = catchAsync(async (req, res, next) => {
 
 // Update employee
 exports.updateEmployee = catchAsync(async (req, res, next) => {
-  const employee = await Employee.findOneAndUpdate(
-    {
-      _id: req.params.id,
-      tenantId: req.params.tenantId || req.tenantId,
-    },
-    req.body,
-    {
-      new: true,
-      runValidators: true, // Validate input data
-    },
-  );
-  res.status(200).json({
-    status: 'success',
-    data: { employee },
-  });
-
-  //   if (!employee) {
-  //     return next(new AppError('No employee found with that ID', 404));
-  //   }
-
-  //   if (req.file && employee.imageName) {
-  //     const oldImagePath = path.join(
-  //       __dirname,
-  //       '..',
-  //       'public',
-  //       'img',
-  //       'employees',
-  //       employee.imageName,
-  //     );
-
-  //     try {
-  //       await fs.unlink(oldImagePath);
-  //     } catch (err) {
-  //       console.error('Failed to delete old image:', err);
-  //     }
-  //   }
-
-  //   const updatedEmployee = await Employee.findOneAndUpdate(
-  //     { _id: req.params.id, tenantId: req.params.tenantId || req.tenantId },
-  //     {
-  //       ...req.body,
-  //       imageName: req.file ? req.file.filename : employee.imageName,
-  //     },
-  //     {
-  //       new: true,
-  //       runValidators: true,
-  //     },
-  //   );
-});
-
-// Delete employee
-exports.deleteEmployee = catchAsync(async (req, res, next) => {
   const employee = await Employee.findOne({
     _id: req.params.id,
     tenantId: req.params.tenantId || req.tenantId,
   });
-  if (!employee) {
-    return next(new AppError('No employee found with this ID', 404));
-  }
 
-  if (employee.imageName) {
-    const imagePath = path.join(
+  // Check, if image  changed
+  if (req.file && employee.imageName) {
+    const oldImagePath = path.join(
       __dirname,
       '..',
       'public',
@@ -184,13 +128,61 @@ exports.deleteEmployee = catchAsync(async (req, res, next) => {
     );
 
     try {
-      await fs.unlink(imagePath);
+      await fs.access(oldImagePath);
+      await fs.unlink(oldImagePath);
     } catch (err) {
-      console.error('Failed to delete image:', err);
+      console.warn(
+        `Old image ${employee.imageName} not found. Skipping deletion.`,
+      );
+    }
+
+    // Set new value of `imageName` v `req.body`
+    req.body.imageName = req.file.filename;
+  }
+
+  // Update post
+  const updatedEmployee = await Employee.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
+  res.status(200).json({
+    status: 'success',
+    data: { employee: updatedEmployee },
+  });
+});
+
+// Delete employee
+exports.deleteEmployee = catchAsync(async (req, res, next) => {
+  const employee = await Employee.findOne({
+    _id: req.params.id,
+    tenantId: req.params.tenantId || req.tenantId,
+  });
+
+  // Delete post if exist
+  if (employee.imageName) {
+    const imagePath = path.join(
+      __dirname,
+      '..',
+      'public',
+      'img',
+      'employees',
+      employee.imageName,
+    );
+    try {
+      await fs.access(imagePath); // Check
+      await fs.unlink(imagePath); // Delete
+    } catch (err) {
+      console.error('Error deleting image:', err.message);
     }
   }
 
-  await Employee.findByIdAndDelete(req.params.id);
+  // Delete post
+  await Employee.findByIdAndDelete(employee._id);
+
   res.status(204).json({
     status: 'success',
     data: null,
@@ -200,6 +192,17 @@ exports.deleteEmployee = catchAsync(async (req, res, next) => {
 // Delete employee image
 exports.deleteEmployeeImage = catchAsync(async (req, res, next) => {
   const image = req.params.imageName;
+  const tenantId = req.params.tenantId || req.tenantId;
+
+  const employee = await Employee.findOne({ imageName: image, tenantId });
+
+  if (!employee) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No employee found with this image and tenantId',
+    });
+  }
+
   const imagePath = path.join(
     __dirname,
     '..',
@@ -211,13 +214,13 @@ exports.deleteEmployeeImage = catchAsync(async (req, res, next) => {
 
   try {
     await fs.access(imagePath);
+    await fs.unlink(imagePath);
   } catch (err) {
     return res.status(404).json({
       status: 'fail',
       message: 'Image file not found.',
     });
   }
-  await fs.unlink(imagePath);
 
   res.status(204).json({
     status: 'success',
