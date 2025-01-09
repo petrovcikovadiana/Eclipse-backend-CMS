@@ -34,7 +34,7 @@ exports.createTenant = catchAsync(async (req, res, next) => {
     { id: user._id, tenantId: tenant.tenantId },
     process.env.JWT_SECRET,
     {
-      expiresIn: '24h', // Token expiry time
+      expiresIn: '5d', // Token expiry time
     },
   );
 

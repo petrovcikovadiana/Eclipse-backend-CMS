@@ -6,7 +6,7 @@ const configRouter = require('./configRoutes');
 const userRouter = require('./userRoutes');
 const priceListRouter = require('./priceListRoutes');
 const employeeRouter = require('./employeeRoutes');
-const tenantRouter = require('./tenantRoutes');
+const galleryRouter = require('./galleryRoutes');
 const categoryRouter = require('./categoryRoutes');
 const attachTenantId = require('../utils/tokenExtraction'); // Aktualizace importu
 const priceListController = require('../controllers/priceListController');
@@ -62,5 +62,6 @@ router.use('/:tenantId/users', userRouter);
 router.use('/:tenantId/categories', categoryRouter);
 router.use('/:tenantId/priceLists', priceListRouter);
 router.use('/:tenantId/employees', employeeRouter);
+router.use('/:tenantId/galleries', galleryRouter);
 
 module.exports = router;

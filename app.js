@@ -17,11 +17,17 @@ const userRouter = require('./routes/userRoutes');
 const priceListRouter = require('./routes/priceListRoutes');
 const tenantRouter = require('./routes/tenantRoutes');
 const categoryRouter = require('./routes/categoryRoutes');
+const galleryRouter = require('./routes/galleryRoutes');
 const path = require('path');
 
 const app = express();
 // Add CORS fot different ports
-app.use(cors());
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:5501'], // Povolené domény
+    credentials: true, // Povolit cookies
+  }),
+);
 
 // Serving static files
 app.use(
@@ -29,6 +35,10 @@ app.use(
   express.static(path.join(__dirname, 'public/img/employees')),
 );
 app.use('/img/posts', express.static(path.join(__dirname, 'public/img/posts')));
+app.use(
+  '/img/galleries',
+  express.static(path.join(__dirname, 'public/img/galleries')),
+);
 
 // 1) GLOBAL MIDDLEWARES
 console.log('process.env.NODE_ENV', process.env.NODE_ENV);
@@ -95,6 +105,7 @@ app.use('/api/v1/employees', employeeRouter);
 app.use('/api/v1/categories', categoryRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/tenants', tenantRouter);
+app.use('/api/v1/galleries', galleryRouter);
 
 // app.post('/api/v1/tenants/:tenantId/categories', (req, res) => {});
 
