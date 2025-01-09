@@ -22,12 +22,7 @@ const path = require('path');
 
 const app = express();
 // Add CORS fot different ports
-app.use(
-  cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:5501'], // Povolené domény
-    credentials: true, // Povolit cookies
-  }),
-);
+app.use(cors());
 
 // Serving static files
 app.use(
