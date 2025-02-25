@@ -1,10 +1,7 @@
-# 🌑 Eclipse CMS – Custom Content Management System
+# 🌑 Eclipse CMS – Backend
 
-🚀 **Eclipse CMS** is a powerful, **multi-tenant content management system** built for businesses to manage **blog posts, pricing, images, and opening hours** via API. It provides **role-based user access**, ensuring secure and **personalized content management**.
-
-This project is divided into **two repositories**:  
-🔹 **Frontend** – Built with **React & Tailwind CSS**  
-🔹 **Backend** – Built with **Node.js, Express, and MongoDB**  
+🚀 **Eclipse CMS Backend** is a **Node.js & Express REST API** that connects to a **MongoDB** database allowing users to manage content dynamically.
+It serves as the backend for **Eclipse App CMS Frontend**, providing user authentication, content management, and API connectivity.
 
 https://eclipse.cloudylake.io/login
 ---
@@ -20,11 +17,6 @@ https://eclipse.cloudylake.io/login
 ---
 
 ## 🛠 **Technologies Used**
-### **Frontend (React)**
-- **React.js** – Component-based UI development  
-- **Tailwind CSS** – Utility-first styling for rapid customization  
-- **Axios** – Handles API requests  
-- **React Router** – Client-side routing  
 
 ### **Backend (Node.js + Express)**
 - **Node.js + Express.js** – REST API development  
